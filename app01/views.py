@@ -56,69 +56,97 @@ def index(request):
 
 def book(request):
 
-    #做时间上的比对
-    tm=datetime.datetime.now().date()  #现在时间                  #取到的时间格式是2011-11-12
-    choice_time=request.GET.get('choice_time')
-    choice_time=datetime.datetime.strptime(choice_time,'%Y-%m-%d').date()  #从数据库拿出来的时间
-    if choice_time<tm:
-        raise Exception('选择的日期不能小于当前日期')
+    if request.method=='GET':
+        #做时间上的比对
+        tm=datetime.datetime.now().date()  #现在时间                  #取到的时间格式是2011-11-12
+        choice_time=request.GET.get('choice_time')
+        choice_time=datetime.datetime.strptime(choice_time,'%Y-%m-%d').date()  #从数据库拿出来的时间
+        if choice_time<tm:
+            raise Exception('选择的日期不能小于当前日期')
 
 
-    #整理数据格式,以便下面判断,为的是更快的找到数据,加快电脑运行速度
-    res_dict={}
-    res_list=models.Result.objects.filter(day=choice_time)
+        #整理数据格式,以便下面判断,为的是更快的找到数据,加快电脑运行速度
+        res_dict={}
+        res_list=models.Result.objects.filter(day=choice_time)
 
-    print(request.session['name'])
-    for res in res_list:
+        print(request.session['name'])
+        for res in res_list:
+            if res.room_id not in res_dict:
+                res_dict[res.room_id]={
+                    res.time:{'user_id':res.user_id,'username':res.user.name}  #res.user.name是跨表查询
+                }
+            else:
+                res_dict[res.room_id][res.time]={'user_id':res.user_id,'username':res.user.name}
+        response={'status':True,'msg':None,'data':None}
 
-        if res.room_id not in res_dict:
-            res_dict[res.room_id]={
-                res.time:{'user_id':res.user_id,'username':res.user.name}  #res.user.name是跨表查询
-            }
-        else:
-            res_dict[res.room_id][res.time]={'user_id':res.user_id,'username':res.user.name}
+        try:
+            out_lst=[]
+            room_list=models.BoardRoom.objects.all()
+            all_time = models.Result.choice_time
+            user_list=models.User.objects.all()
 
-    response={'status':True,'msg':None,'data':None}
+            for room in room_list:      #遍历room,弄出tr
+                lst=[]
+                lst.append({'text':room.title,'attrs':''})
+                for time_num in all_time:       #遍历时间段 弄出td
 
-
-    try:
-        out_lst=[]
-        room_list=models.BoardRoom.objects.all()
-        all_time = models.Result.choice_time
-        user_list=models.User.objects.all()
-
-
-        for room in room_list:      #遍历room,弄出tr
-            lst=[]
-            lst.append({'text':room.title,'attrs':''})
-            for time_num in all_time:       #遍历时间段 弄出td
-
-                if room.id in res_dict and time_num[0] in res_dict[room.id]:
-                    if res_dict[room.id][time_num[0]]['username']==request.session['name']:
-                        lst.append({'text':res_dict[room.id][time_num[0]]['username'],'attrs':{'class':'chonsen','room_id':room.id,'time':time_num[0]}})
+                    if room.id in res_dict and time_num[0] in res_dict[room.id]:
+                        if res_dict[room.id][time_num[0]]['username']==request.session['name']:
+                            lst.append({'text':res_dict[room.id][time_num[0]]['username'],'attrs':{'class':'chonsen','room_id':room.id,'time':time_num[0]}})
+                        else:
+                            lst.append({'text': res_dict[room.id][time_num[0]]['username'],
+                                        'attrs': {'class': 'chonsen', 'room_id': room.id, 'time': time_num[0],
+                                                  'is_self':'true'}})
                     else:
-                        lst.append({'text': res_dict[room.id][time_num[0]]['username'],
-                                    'attrs': {'class': 'chonsen', 'room_id': room.id, 'time': time_num[0],
-                                              'is_self':'true'}})
-                else:
-                    lst.append({'text':'','attrs':{'class':'','room_id':room.id,'time':time_num[0]}})
+                        lst.append({'text':'','attrs':{'class':'','room_id':room.id,'time':time_num[0]}})
+                #     lst.append({'text': '','attrs':''})
+                #     for i in user_list:             #判断用户名
+                #         res_obj=models.Result.objects.filter(time=time_num[0], room=room, user=i).first()
+                #         if  res_obj:
+                #
+                #             lst[-1]={'text':i.name,'attrs':{'class':'chonsen','room_id':room.id,'time':time_num[0]}}
+                #             # print(lst[-1])
+
+                out_lst.append(lst)
+            response['data']=out_lst
+            print(out_lst)
+        except Exception as e:
+            response['status']=False
+            response['msg']=str(e)
+
+        return JsonResponse(response)
+    else:
+        import json
+        #我这边要先拿数据,处理数据,这里把新建的数据存进数据库
+        add_del_dict=json.loads(request.POST.get('key'))
+        date_time=request.POST.get('corr_time')
+        print(date_time)
+        add_list=add_del_dict['add_list']
+        del_list=add_del_dict['del_list']
+        print(add_list)
+        print(del_list)
+
+        #这里让增加和相等做一个比对,找出及删除又增加,并且删除
+        for del_room_id in del_list:
+            if del_room_id not in add_list:
+                continue
+            else:
+                for time_id in list(del_list[del_room_id]):
+                    if time_id in add_list[del_room_id]:      #这里为不直接用del_list[del_room_id]
+                        del_list[del_room_id].remove(time_id)
+                        add_list[del_room_id].remove(time_id)
+
+        create_list=[]
+        for room_id in add_list:
+            for time in add_list[room_id]:
+                obj=models.Result(day=date_time,time=time,room_id=room_id,user_id=request.session['id'])
+                create_list.append(obj)
+        models.Result.objects.bulk_create(create_list)
 
 
-            #     lst.append({'text': '','attrs':''})
-            #     for i in user_list:             #判断用户名
-            #         res_obj=models.Result.objects.filter(time=time_num[0], room=room, user=i).first()
-            #         if  res_obj:
-            #
-            #             lst[-1]={'text':i.name,'attrs':{'class':'chonsen','room_id':room.id,'time':time_num[0]}}
-            #             # print(lst[-1])
 
-            out_lst.append(lst)
-        response['data']=out_lst
-        print(out_lst)
-    except Exception as e:
-        response['status']=False
-        response['msg']=str(e)
 
-    return JsonResponse(response)
+    return HttpResponse('ok')
+
 
 

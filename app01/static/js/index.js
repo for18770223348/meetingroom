@@ -30,7 +30,7 @@ function get_time() {
    $('#datetimepicker').datetimepicker({
         minView: "month",//设置只显示到月份
         format: 'yyyy-mm-dd',//显示格式
-        language: "zh-CN",
+        language: "zh-CN",  //语言
         autoclose: true,//选完自动关闭
         startDate: new Date(),  //起始日期,是新日期
         todayBtn: true,
@@ -42,11 +42,9 @@ function get_time() {
 
    foo(choice_time.Format('yyyy-MM-dd')) ;            //请求初始数据,初始化页面
     page_incident();     //页面事件 :点击--没 变颜色, 有 删除颜色,
+    booking()
 
 }
-
-
-
 
 //发送ajax请求到后端拿数据,渲染页面  发送日期
 function foo(choice_time) {
@@ -60,6 +58,7 @@ function foo(choice_time) {
         success:function (data) {
             var ret = data;
             if(ret.status){
+                $('#Tbody').html('');
                    $.each(ret.data,function (k,v) {
                 var tr =document.createElement('tr');
 
@@ -76,7 +75,11 @@ function foo(choice_time) {
                     $('#Tbody').append(tr)
 
                 })
-            })
+            });
+                dict={
+                    add_list:{},
+                    del_list:{}
+                };
             }
             else{
                 $('.err').html(ret.msg)
@@ -85,12 +88,6 @@ function foo(choice_time) {
         }
     })
 }
-
-dict={
-    add_list:{},
-    del_list:{}
-};
-
 
 //拿到点击事件的信息.
 function page_incident() {
@@ -106,7 +103,10 @@ function page_incident() {
                 var del_index=dict.del_list[room_id].indexOf(time_id);
                 if (del_index === -1){
                     dict.del_list[room_id].push(time_id);
+                }else{
+                    dict.del_list[room_id].splice(del_index,1)
                 }
+
             }
             else{
                 dict.del_list[room_id]=[time_id];           //{add_list:{room_id:[time_id]}}
@@ -122,6 +122,9 @@ function page_incident() {
                 if (add_index === -1){
                     dict.add_list[room_id].push(time_id)
                 }
+                else{
+                    dict.add_list[room_id].splice(add_index,1)
+                }
             }
             else{
                 dict.add_list[room_id]=[time_id]
@@ -132,9 +135,35 @@ function page_incident() {
 
 }
 
-
+dict={
+    add_list:{},
+    del_list:{}
+};
+corrent_time=new Date().Format('yyyy-MM-dd');       //这个corrent_time是传到下面的booking函数
 function func(ev) {
-    var corrent_time=ev.date.Format('yyyy-MM-dd');   //这里的date不是大写的Date
+    var corrent_time=ev.date.Format('yyyy-MM-dd');   //格式化时间,当你的时间插件变化时执行此函数.
+        foo(corrent_time)               //这里是当点击的时候,会执行上面的函数,把上面corrent_time传到上面去
+
+}
+function booking() {
+    $('.c1').click(function () {
+    console.log(dict);
+    $.ajax({
+        url:'/book/',
+        type:'POST',
+        headers:{"X-CSRFToken":$.cookie('csrftoken')},
+        data:{
+            key:JSON.stringify(dict),
+            corr_time:corrent_time
+        },
+        success:function (data) {
+            var res=data;
+            console.log(res)
+        }
+
+    })
+
+});
 
 }
 
