@@ -58,29 +58,17 @@ def book(request):
 
     #做时间上的比对
     tm=datetime.datetime.now().date()  #现在时间                  #取到的时间格式是2011-11-12
-
-    # now=request.GET.get('choice_time)
-    #now =datetime.datetime.strptime(now,'Y-m-d').date()    #字符串时间转化成date类型.
     choice_time=request.GET.get('choice_time')
     choice_time=datetime.datetime.strptime(choice_time,'%Y-%m-%d').date()  #从数据库拿出来的时间
-
-
     if choice_time<tm:
         raise Exception('选择的日期不能小于当前日期')
 
 
     #整理数据格式,以便下面判断,为的是更快的找到数据,加快电脑运行速度
-    '''
-    {1:
-        {2:
-            {}}}
-    '''
-
     res_dict={}
     res_list=models.Result.objects.filter(day=choice_time)
 
-
-
+    print(request.session['name'])
     for res in res_list:
 
         if res.room_id not in res_dict:
@@ -90,14 +78,7 @@ def book(request):
         else:
             res_dict[res.room_id][res.time]={'user_id':res.user_id,'username':res.user.name}
 
-
-
-
-
-
     response={'status':True,'msg':None,'data':None}
-
-
 
 
     try:
@@ -111,10 +92,16 @@ def book(request):
             lst=[]
             lst.append({'text':room.title,'attrs':''})
             for time_num in all_time:       #遍历时间段 弄出td
-                lst.append({'text': '', 'attrs': ''})
-                if room.id in res_dict and time_num[0]==res_dict[room.id]:
-                    lst.append({'text':res_dict[room.id]['username'],'attrs':{'class':'chonsen','room_id':room.id,'time':time_num[0]}})
 
+                if room.id in res_dict and time_num[0] in res_dict[room.id]:
+                    if res_dict[room.id][time_num[0]]['username']==request.session['name']:
+                        lst.append({'text':res_dict[room.id][time_num[0]]['username'],'attrs':{'class':'chonsen','room_id':room.id,'time':time_num[0]}})
+                    else:
+                        lst.append({'text': res_dict[room.id][time_num[0]]['username'],
+                                    'attrs': {'class': 'chonsen', 'room_id': room.id, 'time': time_num[0],
+                                              'is_self':'true'}})
+                else:
+                    lst.append({'text':'','attrs':{'class':'','room_id':room.id,'time':time_num[0]}})
 
 
             #     lst.append({'text': '','attrs':''})
@@ -127,6 +114,7 @@ def book(request):
 
             out_lst.append(lst)
         response['data']=out_lst
+        print(out_lst)
     except Exception as e:
         response['status']=False
         response['msg']=str(e)
