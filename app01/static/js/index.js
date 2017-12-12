@@ -4,8 +4,8 @@
 
 $(document).ready(function () {
      foo() ;            //请求初始数据,初始化页面
-    page_incident()     //页面事件 :点击--没 变颜色, 有 删除颜色,
-
+    page_incident();     //页面事件 :点击--没 变颜色, 有 删除颜色,
+    get_time();
 });
 
 //发送ajax请求到后端拿数据,渲染页面  发送日期
@@ -92,6 +92,18 @@ function page_incident() {
 
 }
 
+function get_time() {
+   $('#datetimepicker').datetimepicker({
+        minView: "month",//设置只显示到月份
+        format: 'yyyy-mm-dd',//显示格式
+        autoclose: true,//选完自动关闭
+        todayBtn: true,
+    });
+   $('#datetimepicker').on('changeDate', function(ev){
+    alert(4324)
+});
+
+}
 
 
 
