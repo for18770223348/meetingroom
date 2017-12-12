@@ -5,6 +5,7 @@
 $(document).ready(function () {
      foo() ;            //请求初始数据,初始化页面
     page_incident()     //页面事件 :点击--没 变颜色, 有 删除颜色,
+
 });
 
 //发送ajax请求到后端拿数据,渲染页面  发送日期
@@ -51,6 +52,7 @@ dict={
 };
 
 
+//拿到点击事件的信息.
 function page_incident() {
     $('#Tbody').on('click','td[room_id][is_self != "true"]',function () {
 
@@ -69,32 +71,28 @@ function page_incident() {
             else{
                 dict.del_list[room_id]=[time_id];           //{add_list:{room_id:[time_id]}}
             }
-
         }
-
         //增加
         else{
             $(this).removeAttr('class');
             $(this).addClass('suc').empty();
 
-            if(dict.add_list[room_id]){
-                var add_index=dict.del_list[room_id].indexOf(time_id);
+            if (dict.add_list[room_id]){
+                var add_index=dict.add_list[room_id].indexOf(time_id);
                 if (add_index === -1){
                     dict.add_list[room_id].push(time_id)
                 }
-
             }
             else{
                 dict.add_list[room_id]=[time_id]
             }
-
-
-
-
-
         }
-        console.log(dict)
-    })
+
+    });
+
 }
+
+
+
 
 
