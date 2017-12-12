@@ -1,21 +1,61 @@
 /**
  *Created by forjie on 2017/12/11
+ *
  */
+Date.prototype.Format = function (fmt) { //author: meizz
+            var o = {
+                "M+": this.getMonth() + 1, //月份
+                "d+": this.getDate(), //日
+                "h+": this.getHours(), //小时
+                "m+": this.getMinutes(), //分
+                "s+": this.getSeconds(), //秒
+                "q+": Math.floor((this.getMonth() + 3) / 3), //季度
+                "S": this.getMilliseconds() //毫秒
+            };
+            if (/(y+)/.test(fmt)) fmt = fmt.replace(RegExp.$1, (this.getFullYear() + "").substr(4 - RegExp.$1.length));
+            for (var k in o)
+                if (new RegExp("(" + k + ")").test(fmt)) fmt = fmt.replace(RegExp.$1, (RegExp.$1.length == 1) ? (o[k]) : (("00" + o[k]).substr(("" + o[k]).length)));
+            return fmt;
+        };
+
+
 
 $(document).ready(function () {
-     foo() ;            //请求初始数据,初始化页面
-    page_incident();     //页面事件 :点击--没 变颜色, 有 删除颜色,
+
     get_time();
 });
 
+
+function get_time() {
+   $('#datetimepicker').datetimepicker({
+        minView: "month",//设置只显示到月份
+        format: 'yyyy-mm-dd',//显示格式
+        language: "zh-CN",
+        autoclose: true,//选完自动关闭
+        startDate: new Date(),  //起始日期,是新日期
+        todayBtn: true,
+        bootcssVer: 3
+    });
+   $('#datetimepicker').on('changeDate', func);
+
+   var choice_time=new Date();
+
+   foo(choice_time.Format('yyyy-MM-dd')) ;            //请求初始数据,初始化页面
+    page_incident();     //页面事件 :点击--没 变颜色, 有 删除颜色,
+
+}
+
+
+
+
 //发送ajax请求到后端拿数据,渲染页面  发送日期
-function foo() {
+function foo(choice_time) {
 
         $.ajax({
         url:'/book/',
         type:'get',
         data:{
-            'choice_time':'2017-12-12'
+            'choice_time':choice_time
         },
         success:function (data) {
             var ret = data;
@@ -92,18 +132,14 @@ function page_incident() {
 
 }
 
-function get_time() {
-   $('#datetimepicker').datetimepicker({
-        minView: "month",//设置只显示到月份
-        format: 'yyyy-mm-dd',//显示格式
-        autoclose: true,//选完自动关闭
-        todayBtn: true,
-    });
-   $('#datetimepicker').on('changeDate', function(ev){
-    alert(4324)
-});
+
+function func(ev) {
+    var corrent_time=ev.date.Format('yyyy-MM-dd');   //这里的date不是大写的Date
 
 }
+
+
+
 
 
 
