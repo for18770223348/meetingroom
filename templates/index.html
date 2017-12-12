@@ -1,0 +1,50 @@
+{% load staticfiles %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Title</title>
+    <link rel="stylesheet" href="{% static 'bootstrap-3.3.7/css/bootstrap.min.css' %}">
+
+    <script src="{% static 'jquery-3.2.1.min.js' %}"></script>
+    <script src="{% static 'bootstrap-3.3.7/js/bootstrap.min.js' %}"></script>
+    <script src="{% static 'js/index.js' %}"></script>
+    <style>
+        td.chonsen{
+            background-color: slateblue;
+        }
+    </style>
+
+</head>
+<body>
+{# 面板 #}
+<div class="panel panel-default">
+    <div class="panel-heading">
+        <h3 class="panel-title">会议室预定</h3>
+    </div>
+
+
+    <div class="panel-body">
+
+        <table class="table table-bordered">
+
+            <tr>
+                <th>会议室</th>
+                {% for foo in all_time %}
+                    <th>{{ foo.1 }}</th>
+                {% endfor %}
+            </tr>
+            <tbody id="Tbody">
+
+            </tbody>
+        </table>
+
+
+    </div>
+</div>
+
+
+</body>
+</html>
